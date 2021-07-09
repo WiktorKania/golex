@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"ckript/token"
 	"fmt"
+	"golex/token"
 	"strconv"
 	"strings"
 	"unicode"
@@ -16,8 +16,29 @@ func containsRune(str string, char rune) bool {
 	return strings.ContainsRune(str, char)
 }
 
+func arrayContains(array []string, str string) bool {
+	for _, val := range array {
+		if val == str {
+			return true
+		}
+	}
+	return false
+}
+
 func isWhitespace(char rune) bool {
 	return unicode.IsSpace(char)
+}
+
+func isAlpha(char rune) bool {
+	return unicode.IsLetter(char)
+}
+
+func isDigit(char rune) bool {
+	return unicode.IsDigit(char)
+}
+
+func isAlnum(char rune) bool {
+	return isAlpha(char) && isDigit(char)
 }
 
 func validNumer(str string, base int) bool {
@@ -38,7 +59,7 @@ var regexActual = [...]string{
 	"\n", "\t", "\a", "\r", "\b", "\v",
 }
 
-var regexes = []string{
+var regexes = [...]string{
 	`\\n`, `\\t`, `\\a`, `\\r`, `\\b`, `\\v`,
 }
 
@@ -91,7 +112,7 @@ const (
 	chars2 = "=+-*&|/<>!%^"
 )
 
-var allowedTokenKeys = [...]string{
+var allowedTokenKeys = []string{
 	"function", "class", "array", "return", "if", "else", "for", "while",
 	"break", "continue", "alloc", "del", "ref", "true", "false", "const",
 }
@@ -110,7 +131,24 @@ func (lexer *Lexer) Tokenize(code string) []*token.Token {
 		if containsRune(chars, c) {
 			lexer.addToken(token.TokenType(c), "")
 		} else {
-			continue
+			c = lexer.cur()
+			if isAlpha(c) || c == '_' {
+				var tokenString = string(c)
+				for {
+					lexer.ptr++
+					if lexer.ptr == lexer.end {
+						break
+					}
+					if isAlnum(lexer.cur()) || lexer.cur() == '_' {
+						break
+					}
+					tokenString += string(lexer.cur())
+				}
+				lexer.ptr--
+				if arrayContains(allowedTokenKeys, tokenString) {
+					continue
+				}
+			}
 		}
 	}
 	return lexer.tokens

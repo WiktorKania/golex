@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ckript/token"
 	"fmt"
+	"golex/token"
 )
 
 func main() {
