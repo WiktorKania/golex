@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"ckript/token"
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
@@ -9,6 +10,10 @@ import (
 
 func contains(str string, needle string) bool {
 	return strings.Contains(str, needle)
+}
+
+func containsRune(str string, char rune) bool {
+	return strings.ContainsRune(str, char)
 }
 
 func isWhitespace(char rune) bool {
@@ -25,11 +30,11 @@ func validFloat(str string) bool {
 	return err == nil
 }
 
-var buildinTypes = []string{
+var buildinTypes = [...]string{
 	"int", "double", "func", "str", "void", "obj", "arr", "bool",
 }
 
-var regexActual = []string{
+var regexActual = [...]string{
 	"\n", "\t", "\a", "\r", "\b", "\v",
 }
 
@@ -75,7 +80,20 @@ func (lexer *Lexer) consumeWhitespace() {
 }
 
 func (lexer *Lexer) addToken(_type token.TokenType, value string) {
+	if lexer.verbose {
+		fmt.Printf("Adding token [%v] = '%v'", _type, value)
+	}
 	lexer.tokens = append(lexer.tokens, token.New(_type, value, 0, ""))
+}
+
+const (
+	chars  = ".,:;{}[]()~$#"
+	chars2 = "=+-*&|/<>!%^"
+)
+
+var allowedTokenKeys = [...]string{
+	"function", "class", "array", "return", "if", "else", "for", "while",
+	"break", "continue", "alloc", "del", "ref", "true", "false", "const",
 }
 
 func (lexer *Lexer) Tokenize(code string) []*token.Token {
@@ -83,7 +101,17 @@ func (lexer *Lexer) Tokenize(code string) []*token.Token {
 	lexer.end = len(lexer.code)
 	lexer.code = code
 	for lexer.ptr != lexer.end {
-
+		lexer.deletedSpaces = 0
+		lexer.consumeWhitespace()
+		if lexer.ptr == lexer.end {
+			break
+		}
+		var c = lexer.cur()
+		if containsRune(chars, c) {
+			lexer.addToken(token.TokenType(c), "")
+		} else {
+			continue
+		}
 	}
 	return lexer.tokens
 }
